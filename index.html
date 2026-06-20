@@ -1016,24 +1016,25 @@ window.compartilharWhatsApp = async function() {
 
   let msg = `🚗 *Corridas do dia — ${dataHoje}*\n\n`;
 
+  const agendadas = corridas.filter(c => c.tipo === 'agendada');
+  const avulsas   = corridas.filter(c => c.tipo === 'avulsa');
+  const comValor  = corridas.filter(c => c.valor != null);
+  const total     = comValor.reduce((s, c) => s + Number(c.valor), 0);
+
+  msg += `📋 Total de corridas: ${corridas.length}\n`;
+  msg += `📅 Agendadas: ${agendadas.length}\n`;
+  msg += `⚡ Avulsas: ${avulsas.length}\n`;
+  if (comValor.length > 0) msg += `💰 Total apurado: ${fmtBRL(total)}\n`;
+  msg += `\n`;
+
   if (corridas.length === 0) {
-    msg += `Nenhuma corrida registrada hoje.`;
+    msg += `Nenhuma corrida registrada neste dia.`;
   } else {
-    const agendadas = corridas.filter(c => c.tipo === 'agendada');
-    const avulsas = corridas.filter(c => c.tipo === 'avulsa');
-    if (agendadas.length > 0) {
-      msg += `📅 *Agendadas (${agendadas.length}):*\n`;
-      agendadas.forEach((c, i) => {
-        msg += `${i + 1}. ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
-      });
-      msg += `\n`;
-    }
-    if (avulsas.length > 0) {
-      msg += `⚡ *Avulsas (${avulsas.length}):*\n`;
-      avulsas.forEach((c, i) => {
-        msg += `${i + 1}. ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
-      });
-    }
+    msg += `*Detalhamento:*\n`;
+    corridas.forEach((c, i) => {
+      const tipo = c.tipo === 'agendada' ? '📅' : '⚡';
+      msg += `${i + 1}. ${tipo} ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
+    });
   }
 
   try {
