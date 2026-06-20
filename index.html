@@ -808,7 +808,10 @@ async function loadCorridas() {
 // ── HOJE ──
 function renderHoje() {
   const hj = hoje();
-  const corridas = todasCorridas.filter(c => isoDate(c.timestamp.toDate()) === hj).slice().reverse();
+  const corridas = todasCorridas
+    .filter(c => isoDate(c.timestamp.toDate()) === hj)
+    .slice()
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   const total = corridas.reduce((s, c) => s + Number(c.valor), 0);
   document.getElementById('total-hoje').textContent = fmtBRL(total);
   document.getElementById('meta-hoje').textContent =
@@ -819,7 +822,7 @@ function renderHoje() {
     lista.innerHTML = `<div class="empty"><div class="empty-icon">🚗</div><div class="empty-text">Nenhuma corrida registrada hoje.<br>Toque em <strong>+</strong> para adicionar.</div></div>`;
     return;
   }
-  lista.innerHTML = corridas.map(c => corridaHTML(c)).join('');
+  lista.innerHTML = corridas.map((c, i) => corridaHTML(c, i, corridas.length)).join('');
 }
 
 // ── HISTORICO ──
@@ -860,17 +863,21 @@ window.renderHistorico = function() {
           <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;">${dataFmt}</span>
           <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--success);font-weight:500;">${fmtBRL(total)}</span>
         </div>
-        ${cs.map(c => corridaHTML(c)).join('')}
+        ${cs.map((c, i) => corridaHTML(c, i, cs.length)).join('')}
       </div>
     `;
   }).join('');
 };
 
-function corridaHTML(c) {
+function corridaHTML(c, idx, total) {
   const ag = c.tipo === 'agendada';
   const semValor = c.valor == null;
   return `
-    <div class="corrida-item">
+    <div class="corrida-item" id="item-${c.id}">
+      <div style="display:flex;flex-direction:column;gap:3px;margin-right:4px;">
+        <button onclick="reordenar('${c.id}',-1)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1;padding:1px 3px;" ${idx === 0 ? 'disabled style="opacity:0.2;pointer-events:none;"' : ''}>▲</button>
+        <button onclick="reordenar('${c.id}',1)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;line-height:1;padding:1px 3px;" ${idx === total - 1 ? 'disabled style="opacity:0.2;pointer-events:none;"' : ''}>▼</button>
+      </div>
       <div class="corrida-tipo ${ag ? 'tipo-ag' : 'tipo-av'}">${ag ? '📅' : '⚡'}</div>
       <div class="corrida-info">
         <div class="corrida-cliente">${c.cliente}</div>
@@ -881,7 +888,7 @@ function corridaHTML(c) {
       <div style="display:flex;align-items:center;gap:6px;">
         ${semValor
           ? `<button onclick="editarValor('${c.id}')" style="font-size:11px;font-weight:600;color:var(--warning);background:var(--warning-light);border:1px solid var(--warning);border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">+ valor</button>`
-          : `<div class="corrida-valor">${fmtBRL(c.valor)}</div>`
+          : `<div class="corrida-valor" style="cursor:pointer;" onclick="editarValor('${c.id}')" title="Toque para editar">${fmtBRL(c.valor)} ✏️</div>`
         }
         <button class="corrida-del" onclick="abrirDelModal('${c.id}','${c.cliente}',${c.valor})">🗑</button>
       </div>
@@ -1082,11 +1089,17 @@ window.salvarCorrida = async function() {
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
+    // ordem = maior ordem do dia + 1
+    const hj2 = hoje();
+    const ordemMax = todasCorridas
+      .filter(c => isoDate(c.timestamp.toDate()) === hj2)
+      .reduce((m, c) => Math.max(m, c.ordem || 0), 0);
+    const ordem = ordemMax + 1;
     const docRef = await addDoc(collection(db, COLL), {
       cliente, valor: valor || null, tipo: tipoSelecionado, obs,
-      timestamp: Timestamp.now()
+      ordem, timestamp: Timestamp.now()
     });
-    todasCorridas.unshift({ id: docRef.id, cliente, valor: valor || null, tipo: tipoSelecionado, obs, timestamp: Timestamp.now() });
+    todasCorridas.unshift({ id: docRef.id, cliente, valor: valor || null, tipo: tipoSelecionado, obs, ordem, timestamp: Timestamp.now() });
     closeModal();
     renderHoje();
     showToast('✅ Corrida registrada!');
@@ -1114,6 +1127,28 @@ window.editarValor = async function(id) {
     renderRelatorio();
     showToast('✅ Valor atualizado!');
   } catch(e) { showToast('❌ Erro ao atualizar.'); }
+};
+
+// ── REORDENAR ──
+window.reordenar = async function(id, dir) {
+  const hj = hoje();
+  const corridas = todasCorridas
+    .filter(c => isoDate(c.timestamp.toDate()) === hj)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+  const idx = corridas.findIndex(c => c.id === id);
+  const outro = corridas[idx + dir];
+  if (!outro) return;
+  const ordemA = corridas[idx].ordem || idx + 1;
+  const ordemB = outro.ordem || idx + 1 + dir;
+  try {
+    await updateDoc(doc(db, COLL, id), { ordem: ordemB });
+    await updateDoc(doc(db, COLL, outro.id), { ordem: ordemA });
+    const iA = todasCorridas.findIndex(c => c.id === id);
+    const iB = todasCorridas.findIndex(c => c.id === outro.id);
+    todasCorridas[iA].ordem = ordemB;
+    todasCorridas[iB].ordem = ordemA;
+    renderHoje();
+  } catch(e) { showToast('❌ Erro ao reordenar.'); }
 };
 
 // ── DELETE ──
