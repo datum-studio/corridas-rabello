@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Corridas Rabello</title>
+<meta name="description" content="Controle de corridas — Glaucia Rabello">
+<meta name="theme-color" content="#2563EB">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Corridas">
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface2: #F0F2F5;
+    --border: #E4E7EC;
+    --text: #0F1117;
+    --text2: #6B7280;
+    --text3: #9CA3AF;
+    --accent: #2563EB;
+    --accent-light: #EFF6FF;
+    --accent-dark: #1D4ED8;
+    --success: #059669;
+    --success-light: #ECFDF5;
+    --warning: #D97706;
+    --warning-light: #FFFBEB;
+    --danger: #DC2626;
+    --danger-light: #FEF2F2;
+    --agendada: #7C3AED;
+    --agendada-light: #F5F3FF;
+    --avulsa: #0891B2;
+    --avulsa-light: #ECFEFF;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 61px;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* PAGE */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+
+  /* TODAY SUMMARY */
+  .today-banner {
+    background: linear-gradient(135deg, var(--accent) 0%, #3B82F6 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .today-banner::after {
+    content: '🚗';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    opacity: 0.2;
+  }
+  .today-label {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .today-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 500;
+    margin-top: 4px;
+    letter-spacing: -1px;
+  }
+  .today-meta {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 6px;
+  }
+
+  /* FORM */
+  .form-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+  .field {
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+  }
+  .tipo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .tipo-btn {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+    color: var(--text2);
+  }
+  .tipo-btn.selected-agendada {
+    border-color: var(--agendada);
+    background: var(--agendada-light);
+    color: var(--agendada);
+  }
+  .tipo-btn.selected-avulsa {
+    border-color: var(--avulsa);
+    background: var(--avulsa-light);
+    color: var(--avulsa);
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .btn-primary:active { background: var(--accent-dark); }
+  .btn-primary:disabled { background: var(--text3); cursor: default; }
+
+  /* CORRIDA ITEM */
+  .corrida-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .corrida-item:last-child { border-bottom: none; }
+  .corrida-tipo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tipo-ag { background: var(--agendada-light); }
+  .tipo-av { background: var(--avulsa-light); }
+  .corrida-info { flex: 1; min-width: 0; }
+  .corrida-cliente {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .corrida-meta {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .tipo-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-ag { background: var(--agendada-light); color: var(--agendada); }
+  .badge-av { background: var(--avulsa-light); color: var(--avulsa); }
+  .corrida-valor {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--success);
+    white-space: nowrap;
+  }
+  .corrida-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+  .corrida-del:active { color: var(--danger); }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 36px 20px;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  .empty-text { font-size: 14px; }
+
+  /* RELATORIOS */
+  .relatorio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .stat-value.green { color: var(--success); }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* BAR CHART */
+  .bar-chart { margin-top: 4px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .bar-label {
+    font-size: 12px;
+    color: var(--text2);
+    width: 60px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+  }
+  .bar-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    width: 64px;
+    flex-shrink: 0;
+  }
+
+  /* PERIODO SELECT */
+  .periodo-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .periodo-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text2);
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .periodo-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* SHARE BTN */
+  .btn-share {
+    width: 100%;
+    padding: 13px;
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .btn-share:active { background: #1da851; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #111827;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    z-index: 100;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 6px 0;
+    color: var(--text3);
+    font-size: 10px;
+    font-weight: 500;
+    transition: color 0.15s;
+    user-select: none;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon { font-size: 20px; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: 76px;
+    right: 20px;
+    width: 52px; height: 52px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, background 0.15s;
+    z-index: 101;
+  }
+  .fab:active { transform: scale(0.93); background: var(--accent-dark); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 36px;
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .btn-cancel {
+    padding: 13px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-danger {
+    padding: 13px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--danger);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="header-title">Corridas Rabello</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px;letter-spacing:-0.2px;">Glaucia Rabello</div>
+      <div class="header-sub" id="header-date">carregando...</div>
+    </div>
+    <div style="font-size:13px;color:var(--text3)">
+      <span class="status-dot"></span>online
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="hoje" onclick="switchTab('hoje')">Hoje</div>
+  <div class="tab" data-tab="historico" onclick="switchTab('historico')">Histórico</div>
+  <div class="tab" data-tab="relatorios" onclick="switchTab('relatorios')">Relatórios</div>
+</div>
+
+<!-- PAGE: HOJE -->
+<div class="page active" id="page-hoje">
+  <div class="today-banner">
+    <div class="today-label">Total de hoje</div>
+    <div class="today-value" id="total-hoje">R$ 0,00</div>
+    <div class="today-meta" id="meta-hoje">0 corridas</div>
+  </div>
+
+  <div class="card">
+    <div class="section-header">
+      <span class="section-title">Corridas de hoje</span>
+    </div>
+    <div id="lista-hoje">
+      <div class="loading">Carregando...</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+    <input type="date" id="data-copia" style="flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface);outline:none;">
+    <button class="btn-share" onclick="compartilharWhatsApp()" style="flex:none;width:auto;padding:12px 16px;white-space:nowrap;">
+      <span>📋</span> Copiar lista
+    </button>
+  </div>
+</div>
+
+<!-- PAGE: HISTORICO -->
+<div class="page" id="page-historico">
+  <div class="card" style="margin-bottom:0;border-radius:var(--radius) var(--radius) 0 0;border-bottom:none;">
+    <input type="month" id="filtro-mes" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:Inter,sans-serif;outline:none;color:var(--text);" onchange="renderHistorico()">
+  </div>
+  <div class="card" style="border-radius:0 0 var(--radius) var(--radius);margin-bottom:12px;">
+    <div id="lista-historico"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- PAGE: RELATORIOS -->
+<div class="page" id="page-relatorios">
+  <div class="periodo-row" id="periodo-btns">
+    <button class="periodo-btn active" onclick="setPeriodo('semana',this)">Esta semana</button>
+    <button class="periodo-btn" onclick="setPeriodo('mes',this)">Este mês</button>
+    <button class="periodo-btn" onclick="setPeriodo('30d',this)">Últimos 30 dias</button>
+    <button class="periodo-btn" onclick="setPeriodo('90d',this)">Últimos 90 dias</button>
+  </div>
+  <div id="relatorio-content"><div class="loading">Carregando...</div></div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="Nova corrida">+</button>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-hoje" onclick="switchTab('hoje')">
+    <span class="nav-icon">🚗</span>Hoje
+  </div>
+  <div class="nav-item" id="nav-historico" onclick="switchTab('historico')">
+    <span class="nav-icon">📋</span>Histórico
+  </div>
+  <div class="nav-item" id="nav-relatorios" onclick="switchTab('relatorios')">
+    <span class="nav-icon">📊</span>Relatórios
+  </div>
+</div>
+
+<!-- MODAL: NOVA CORRIDA -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nova corrida</div>
+
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="campo-cliente" placeholder="Nome do cliente" autocomplete="off" autocapitalize="words">
+    </div>
+
+    <div class="field">
+      <label>Valor (R$) <span style="color:var(--text3);font-size:10px;text-transform:none;">(opcional — pode preencher depois)</span></label>
+      <input type="text" id="campo-valor" placeholder="0,00" inputmode="decimal" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Tipo de corrida</label>
+      <div class="tipo-row">
+        <div class="tipo-btn" id="btn-agendada" onclick="selecionarTipo('agendada')">📅 Agendada</div>
+        <div class="tipo-btn" id="btn-avulsa" onclick="selecionarTipo('avulsa')">⚡ Avulsa</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Observação <span style="color:var(--text3);font-size:10px;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="campo-obs" placeholder="Ex: aeroporto, retorno, etc.">
+    </div>
+
+    <button class="btn-primary" onclick="salvarCorrida()">Registrar corrida</button>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR DELETE -->
+<div class="modal-overlay" id="modal-del" onclick="fecharDelModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Excluir corrida?</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.5;" id="del-info"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="fecharDelModal()">Cancelar</button>
+      <button class="btn-danger" onclick="confirmarDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer style="border-top:1px solid var(--border);padding:14px 20px;margin-top:8px;">
+  <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:3px;">
+    Lopes · Análise e Gestão de Dados
+  </div>
+  <div style="font-size:0.68rem;color:var(--text3);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span>Desenvolvido por Débora Lopes</span>
+    <span style="opacity:0.4;">|</span>
+    <span>Corridas · Glaucia Rabello © <span id="footer-ano">2026</span></span>
+  </div>
+</footer>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, updateDoc, doc, query, orderBy, Timestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── CONFIG ── substitua pelos dados do seu projeto Firebase ──
+const firebaseConfig = {
+  apiKey: "AIzaSyCbyZbIF0_40iLNT-9uCn81GKmbYOMBPeE",
+  authDomain: "corridas-glaucia.firebaseapp.com",
+  projectId: "corridas-glaucia",
+  storageBucket: "corridas-glaucia.firebasestorage.app",
+  messagingSenderId: "556672478601",
+  appId: "1:556672478601:web:0927e4d94b3251dcfdc558"
+};
+// ─────────────────────────────────────────────────────────────
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const COLL = 'corridas';
+
+let todasCorridas = [];
+let tipoSelecionado = null;
+let delId = null;
+let periodoAtivo = 'semana';
+
+// ── UTILS ──
+const fmtBRL = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtData = d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const fmtHora = d => new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const hoje = () => new Date().toISOString().slice(0, 10);
+const isoDate = d => new Date(d).toISOString().slice(0, 10);
+
+function showToast(msg, dur = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ── HEADER DATE ──
+function setHeaderDate() {
+  const now = new Date();
+  const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  document.getElementById('header-date').textContent =
+    `${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+}
+
+// ── TABS ──
+window.switchTab = function(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-' + tab));
+  if (tab === 'historico') renderHistorico();
+  if (tab === 'relatorios') renderRelatorio();
+};
+
+// ── LOAD ──
+async function loadCorridas() {
+  const q = query(collection(db, COLL), orderBy('timestamp', 'desc'));
+  const snap = await getDocs(q);
+  todasCorridas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderHoje();
+  renderHistorico();
+  renderRelatorio();
+}
+
+// ── HOJE ──
+function renderHoje() {
+  const hj = hoje();
+  const corridas = todasCorridas.filter(c => isoDate(c.timestamp.toDate()) === hj).slice().reverse();
+  const total = corridas.reduce((s, c) => s + Number(c.valor), 0);
+  document.getElementById('total-hoje').textContent = fmtBRL(total);
+  document.getElementById('meta-hoje').textContent =
+    `${corridas.length} corrida${corridas.length !== 1 ? 's' : ''} hoje`;
+
+  const lista = document.getElementById('lista-hoje');
+  if (corridas.length === 0) {
+    lista.innerHTML = `<div class="empty"><div class="empty-icon">🚗</div><div class="empty-text">Nenhuma corrida registrada hoje.<br>Toque em <strong>+</strong> para adicionar.</div></div>`;
+    return;
+  }
+  lista.innerHTML = corridas.map(c => corridaHTML(c)).join('');
+}
+
+// ── HISTORICO ──
+window.renderHistorico = function() {
+  const mesInput = document.getElementById('filtro-mes');
+  if (!mesInput.value) {
+    const now = new Date();
+    mesInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  const [ano, mes] = mesInput.value.split('-').map(Number);
+  const corridas = todasCorridas.filter(c => {
+    const d = c.timestamp.toDate();
+    return d.getFullYear() === ano && d.getMonth() + 1 === mes;
+  });
+
+  // agrupar por dia
+  const porDia = {};
+  corridas.forEach(c => {
+    const dia = isoDate(c.timestamp.toDate());
+    if (!porDia[dia]) porDia[dia] = [];
+    porDia[dia].push(c);
+  });
+
+  const lista = document.getElementById('lista-historico');
+  if (corridas.length === 0) {
+    lista.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Sem corridas neste mês.</div></div>`;
+    return;
+  }
+
+  const dias = Object.keys(porDia).sort().reverse();
+  lista.innerHTML = dias.map(dia => {
+    const cs = porDia[dia];
+    const total = cs.reduce((s, c) => s + Number(c.valor), 0);
+    const dataFmt = fmtData(dia + 'T12:00:00');
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;">${dataFmt}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--success);font-weight:500;">${fmtBRL(total)}</span>
+        </div>
+        ${cs.map(c => corridaHTML(c)).join('')}
+      </div>
+    `;
+  }).join('');
+};
+
+function corridaHTML(c) {
+  const ag = c.tipo === 'agendada';
+  const semValor = c.valor == null;
+  return `
+    <div class="corrida-item">
+      <div class="corrida-tipo ${ag ? 'tipo-ag' : 'tipo-av'}">${ag ? '📅' : '⚡'}</div>
+      <div class="corrida-info">
+        <div class="corrida-cliente">${c.cliente}</div>
+        <div class="corrida-meta">
+          ${c.obs ? c.obs + ' · ' : ''}<span class="tipo-badge ${ag ? 'badge-ag' : 'badge-av'}">${c.tipo}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        ${semValor
+          ? `<button onclick="editarValor('${c.id}')" style="font-size:11px;font-weight:600;color:var(--warning);background:var(--warning-light);border:1px solid var(--warning);border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">+ valor</button>`
+          : `<div class="corrida-valor">${fmtBRL(c.valor)}</div>`
+        }
+        <button class="corrida-del" onclick="abrirDelModal('${c.id}','${c.cliente}',${c.valor})">🗑</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── RELATORIOS ──
+window.setPeriodo = function(p, btn) {
+  periodoAtivo = p;
+  document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRelatorio();
+};
+
+function getRange(p) {
+  const now = new Date();
+  let ini;
+  if (p === 'semana') {
+    ini = new Date(now); ini.setDate(now.getDate() - now.getDay());
+    ini.setHours(0, 0, 0, 0);
+  } else if (p === 'mes') {
+    ini = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (p === '30d') {
+    ini = new Date(now); ini.setDate(now.getDate() - 29); ini.setHours(0, 0, 0, 0);
+  } else if (p === '90d') {
+    ini = new Date(now); ini.setDate(now.getDate() - 89); ini.setHours(0, 0, 0, 0);
+  }
+  return ini;
+}
+
+function renderRelatorio() {
+  const ini = getRange(periodoAtivo);
+  const corridas = todasCorridas.filter(c => c.timestamp.toDate() >= ini);
+  const total = corridas.reduce((s, c) => s + Number(c.valor), 0);
+  const agendadas = corridas.filter(c => c.tipo === 'agendada');
+  const avulsas = corridas.filter(c => c.tipo === 'avulsa');
+  const totalAg = agendadas.reduce((s, c) => s + Number(c.valor), 0);
+  const totalAv = avulsas.reduce((s, c) => s + Number(c.valor), 0);
+
+  // por dia da semana
+  const diasNome = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const porDia = Array(7).fill(0);
+  corridas.forEach(c => { porDia[c.timestamp.toDate().getDay()] += Number(c.valor); });
+  const maxDia = Math.max(...porDia, 1);
+
+  // corridas por cliente (top 5)
+  const porCliente = {};
+  corridas.forEach(c => { porCliente[c.cliente] = (porCliente[c.cliente] || 0) + Number(c.valor); });
+  const topClientes = Object.entries(porCliente).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxCliente = topClientes[0]?.[1] || 1;
+
+  // média por corrida
+  const media = corridas.length > 0 ? total / corridas.length : 0;
+
+  // dias com corrida
+  const diasAtivos = new Set(corridas.map(c => isoDate(c.timestamp.toDate()))).size;
+
+  const el = document.getElementById('relatorio-content');
+  el.innerHTML = `
+    <div class="relatorio-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total</div>
+        <div class="stat-value green">${fmtBRL(total)}</div>
+        <div class="stat-sub">${corridas.length} corridas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Média/corrida</div>
+        <div class="stat-value">${fmtBRL(media)}</div>
+        <div class="stat-sub">${diasAtivos} dia${diasAtivos !== 1 ? 's' : ''} ativo${diasAtivos !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Agendadas</div>
+        <div class="stat-value" style="color:var(--agendada)">${fmtBRL(totalAg)}</div>
+        <div class="stat-sub">${agendadas.length} corridas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avulsas</div>
+        <div class="stat-value" style="color:var(--avulsa)">${fmtBRL(totalAv)}</div>
+        <div class="stat-sub">${avulsas.length} corridas</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">Ganhos por dia da semana</div>
+      <div class="bar-chart">
+        ${diasNome.map((d, i) => `
+          <div class="bar-row">
+            <span class="bar-label">${d}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(porDia[i] / maxDia * 100)}%"></div></div>
+            <span class="bar-val">${porDia[i] > 0 ? fmtBRL(porDia[i]) : '—'}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    ${topClientes.length > 0 ? `
+    <div class="card">
+      <div class="section-title" style="margin-bottom:12px;">Top clientes</div>
+      <div class="bar-chart">
+        ${topClientes.map(([nome, val]) => `
+          <div class="bar-row">
+            <span class="bar-label" style="width:72px;font-size:11px;">${nome.split(' ')[0]}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(val / maxCliente * 100)}%;background:var(--agendada)"></div></div>
+            <span class="bar-val">${fmtBRL(val)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+  `;
+}
+
+// ── COPIAR RESUMO ──
+window.compartilharWhatsApp = async function() {
+  const dataSel = document.getElementById('data-copia').value || hoje();
+  const corridas = todasCorridas
+    .filter(c => isoDate(c.timestamp.toDate()) === dataSel)
+    .slice().reverse();
+
+  const now = new Date();
+  const dataRef = new Date(dataSel + 'T12:00:00');
+  const dataHoje = dataRef.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  let msg = `🚗 *Corridas do dia — ${dataHoje}*\n\n`;
+
+  if (corridas.length === 0) {
+    msg += `Nenhuma corrida registrada hoje.`;
+  } else {
+    const agendadas = corridas.filter(c => c.tipo === 'agendada');
+    const avulsas = corridas.filter(c => c.tipo === 'avulsa');
+    if (agendadas.length > 0) {
+      msg += `📅 *Agendadas (${agendadas.length}):*\n`;
+      agendadas.forEach((c, i) => {
+        msg += `${i + 1}. ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
+      });
+      msg += `\n`;
+    }
+    if (avulsas.length > 0) {
+      msg += `⚡ *Avulsas (${avulsas.length}):*\n`;
+      avulsas.forEach((c, i) => {
+        msg += `${i + 1}. ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
+      });
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(msg);
+    showToast('✅ Copiado! Cole no WhatsApp pessoal.');
+  } catch(e) {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = msg; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Copiado! Cole no WhatsApp pessoal.');
+  }
+};
+
+// ── MODAL NOVA CORRIDA ──
+window.openModal = function() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('campo-cliente').focus();
+};
+
+window.handleOverlayClick = function(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+};
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('campo-cliente').value = '';
+  document.getElementById('campo-valor').value = '';
+  document.getElementById('campo-obs').value = '';
+  tipoSelecionado = null;
+  document.getElementById('btn-agendada').className = 'tipo-btn';
+  document.getElementById('btn-avulsa').className = 'tipo-btn';
+}
+
+window.selecionarTipo = function(t) {
+  tipoSelecionado = t;
+  document.getElementById('btn-agendada').className = 'tipo-btn' + (t === 'agendada' ? ' selected-agendada' : '');
+  document.getElementById('btn-avulsa').className = 'tipo-btn' + (t === 'avulsa' ? ' selected-avulsa' : '');
+};
+
+window.salvarCorrida = async function() {
+  const cliente = document.getElementById('campo-cliente').value.trim();
+  const valorRaw = document.getElementById('campo-valor').value.replace(',', '.').trim();
+  const valor = valorRaw ? parseFloat(valorRaw) : null;
+  const obs = document.getElementById('campo-obs').value.trim();
+
+  if (!cliente) { showToast('⚠️ Informe o nome do cliente'); return; }
+  if (!tipoSelecionado) { showToast('⚠️ Selecione o tipo da corrida'); return; }
+
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const docRef = await addDoc(collection(db, COLL), {
+      cliente, valor: valor || null, tipo: tipoSelecionado, obs,
+      timestamp: Timestamp.now()
+    });
+    todasCorridas.unshift({ id: docRef.id, cliente, valor: valor || null, tipo: tipoSelecionado, obs, timestamp: Timestamp.now() });
+    closeModal();
+    renderHoje();
+    showToast('✅ Corrida registrada!');
+  } catch (e) {
+    showToast('❌ Erro ao salvar. Tente novamente.');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Registrar corrida';
+  }
+};
+
+// ── EDITAR VALOR ──
+window.editarValor = async function(id) {
+  const input = prompt('Informe o valor da corrida (ex: 25,50):');
+  if (input === null) return;
+  const valorRaw = input.replace(',', '.').trim();
+  const valor = parseFloat(valorRaw);
+  if (!valor || valor <= 0) { showToast('⚠️ Valor inválido'); return; }
+  try {
+    await updateDoc(doc(db, COLL, id), { valor });
+    const idx = todasCorridas.findIndex(c => c.id === id);
+    if (idx !== -1) todasCorridas[idx].valor = valor;
+    renderHoje();
+    renderHistorico();
+    renderRelatorio();
+    showToast('✅ Valor atualizado!');
+  } catch(e) { showToast('❌ Erro ao atualizar.'); }
+};
+
+// ── DELETE ──
+window.abrirDelModal = function(id, cliente, valor) {
+  delId = id;
+  document.getElementById('del-info').innerHTML =
+    `<strong>${cliente}</strong> · ${fmtBRL(valor)}<br><br>Esta ação não pode ser desfeita.`;
+  document.getElementById('modal-del').classList.add('open');
+};
+
+window.fecharDelModal = function(e) {
+  if (!e || e.target === document.getElementById('modal-del')) {
+    document.getElementById('modal-del').classList.remove('open');
+    delId = null;
+  }
+};
+
+window.confirmarDelete = async function() {
+  if (!delId) return;
+  try {
+    await deleteDoc(doc(db, COLL, delId));
+    todasCorridas = todasCorridas.filter(c => c.id !== delId);
+    document.getElementById('modal-del').classList.remove('open');
+    delId = null;
+    renderHoje();
+    renderHistorico();
+    renderRelatorio();
+    showToast('🗑 Corrida excluída');
+  } catch (e) {
+    showToast('❌ Erro ao excluir. Tente novamente.');
+  }
+};
+
+// ── INIT ──
+setHeaderDate();
+loadCorridas();
+const inputDataCopia = document.getElementById('data-copia');
+if (inputDataCopia) inputDataCopia.value = hoje();
+
+// máscara valor
+document.getElementById('campo-valor').addEventListener('input', function() {
+  let v = this.value.replace(/[^0-9,\.]/g, '');
+  const parts = v.split(/[,\.]/);
+  if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('');
+  this.value = v;
+});
+</script>
+</body>
+</html>
