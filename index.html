@@ -1120,7 +1120,7 @@ window.compartilharWhatsApp = async function() {
     msg += `*Detalhamento:*\n`;
     corridas.forEach((c, i) => {
       const tipo = c.tipo === 'agendada' ? '📅' : '⚡';
-      msg += `${i + 1}. ${tipo} ${c.cliente}${c.obs ? ' — ' + c.obs : ''}\n`;
+      msg += `${i + 1}. ${tipo} ${c.cliente}${c.valor != null ? ' — ' + fmtBRL(c.valor) : ' — a confirmar'}${c.obs ? ' (' + c.obs + ')' : ''}\n`;
     });
     msg += `\n`;
   }
