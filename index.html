@@ -736,8 +736,11 @@
   <div class="card" style="background:var(--accent-light);border-color:var(--accent);padding:14px 16px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:13px;font-weight:700;color:var(--accent-dark);" id="agenda-hoje-titulo">Agendamentos de hoje</div>
-      <input type="date" id="agenda-data-filtro" onchange="renderAgenda()"
-        style="padding:5px 10px;border:1.5px solid var(--accent);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;color:var(--accent-dark);background:white;outline:none;cursor:pointer;">
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button onclick="navegarDia(-1)" style="background:white;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;font-family:Inter,sans-serif;font-weight:600;">‹</button>
+        <span id="agenda-dia-label" style="font-size:11px;font-weight:700;color:var(--accent-dark);min-width:28px;text-align:center;"></span>
+        <button onclick="navegarDia(1)" style="background:white;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;font-family:Inter,sans-serif;font-weight:600;">›</button>
+      </div>
     </div>
     <div id="agenda-hoje-lista">
       <div style="font-size:13px;color:var(--text3);">Carregando...</div>
@@ -862,10 +865,7 @@
       </div>
     </div>
 
-    <div id="campo-data-pontual" class="field" style="display:none;">
-      <label>Data da corrida</label>
-      <input type="date" id="agenda-data-pontual" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface);outline:none;">
-    </div>
+    <!-- Pontual: mesmo campo de dias, mas não repete -->
 
     <button class="btn-primary" id="btn-salvar-agenda" onclick="salvarAgendaFixa()">Salvar agendamento</button>
   </div>
@@ -979,6 +979,7 @@ let agendaEditandoId = null;
 let diasSelecionados = new Set();
 let confirmacoesHoje = {};
 window._tipoAgenda = 'recorrente';
+window._diaOffset = 0; // 0 = hoje, 1 = amanhã, -1 = ontem
 let tipoSelecionado = null;
 let delId = null;
 let periodoAtivo = 'semana';
@@ -1629,24 +1630,24 @@ window.renderAgenda = function() {
 
   tituloEl.textContent = `Agendamentos de hoje — ${DIAS_FULL[diaSemana]}`;
 
-  // Data do filtro (default hoje)
-  const hjStr = hoje();
-  const filtroInput = document.getElementById('agenda-data-filtro');
-  if (filtroInput && !filtroInput.value) filtroInput.value = hjStr;
-  const dataSel = filtroInput?.value || hjStr;
-  const dataSelObj = new Date(dataSel + 'T12:00:00');
+  // Dia da semana baseado em offset
+  const offset = window._diaOffset || 0;
+  const dataSelObj = new Date();
+  dataSelObj.setDate(dataSelObj.getDate() + offset);
   const diaSel = dataSelObj.getDay();
-  const ehHoje = dataSel === hjStr;
+  const ehHoje = offset === 0;
+  const dataSel = isoDate(dataSelObj); // para compatibilidade com confirmações
+
+  // Atualizar label do navegador
+  const labelEl = document.getElementById('agenda-dia-label');
+  if (labelEl) labelEl.textContent = DIAS_NOME[diaSel];
 
   tituloEl.textContent = ehHoje
     ? `Agendamentos de hoje — ${DIAS_FULL[diaSel]}`
-    : `Agendamentos — ${fmtData(dataSel + 'T12:00:00')} (${DIAS_FULL[diaSel]})`;
+    : `${DIAS_FULL[diaSel]}`;
 
   const deHoje = agendaFixa
-    .filter(a => {
-      if (a.tipo === 'pontual') return a.dataPontual === dataSel;
-      return a.dias && a.dias.includes(diaSel);
-    })
+    .filter(a => a.dias && a.dias.includes(diaSel))
     .sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
 
   if (deHoje.length === 0) {
@@ -1688,10 +1689,10 @@ window.renderAgenda = function() {
           ${a.tipo === 'pontual' ? '📌' : '🔁'} ${a.cliente}
         </div>
         ${a.horario ? `<div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;">${a.horario}</div>` : ''}
-        ${a.tipo === 'pontual'
-          ? `<div style="margin-top:4px;"><span class="fixo-dia-badge" style="background:var(--warning-light);color:var(--warning);">${a.dataPontual ? fmtData(a.dataPontual+'T12:00:00') : ''}</span></div>`
-          : `<div class="fixo-dias">${(a.dias||[]).sort().map(d => `<span class="fixo-dia-badge">${DIAS_NOME[d]}</span>`).join('')}</div>`
-        }
+        <div class="fixo-dias">
+          ${(a.dias||[]).sort().map(d => `<span class="fixo-dia-badge" style="${a.tipo==='pontual'?'background:var(--warning-light);color:var(--warning);':''}">${DIAS_NOME[d]}</span>`).join('')}
+          ${a.tipo==='pontual' ? '<span class="fixo-dia-badge" style="background:var(--warning-light);color:var(--warning);">não repete</span>' : ''}
+        </div>
       </div>
       <div style="display:flex;gap:6px;">
         <button onclick="editarAgenda('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);">✏️</button>
@@ -1718,6 +1719,11 @@ window.toggleConfirmacao = function(id, data, checked) {
   if (item) item.classList.toggle('done', checked);
 };
 
+window.navegarDia = function(dir) {
+  window._diaOffset = (window._diaOffset || 0) + dir;
+  renderAgenda();
+};
+
 window.registrarDaAgenda = function(id) {
   const ag = agendaFixa.find(a => a.id === id);
   if (!ag) return;
@@ -1735,7 +1741,6 @@ window.abrirModalAgenda = function() {
   diasSelecionados = new Set();
   document.getElementById('agenda-cliente').value = '';
   document.getElementById('agenda-horario').value = '';
-  document.getElementById('agenda-data-pontual').value = '';
   document.querySelectorAll('.dia-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('modal-agenda-titulo').textContent = 'Novo agendamento';
   setTipoAgenda('recorrente');
@@ -1746,8 +1751,6 @@ window.setTipoAgenda = function(tipo) {
   window._tipoAgenda = tipo;
   document.getElementById('btn-tipo-recorrente').className = 'tipo-btn' + (tipo === 'recorrente' ? ' selected-agendada' : '');
   document.getElementById('btn-tipo-pontual').className = 'tipo-btn' + (tipo === 'pontual' ? ' selected-agendada' : '');
-  document.getElementById('campo-dias-semana').style.display = tipo === 'recorrente' ? 'block' : 'none';
-  document.getElementById('campo-data-pontual').style.display = tipo === 'pontual' ? 'block' : 'none';
 };
 
 window.fecharModalAgenda = function(e) {
@@ -1771,21 +1774,17 @@ window.toggleDia = function(btn) {
 window.salvarAgendaFixa = async function() {
   const cliente = document.getElementById('agenda-cliente').value.trim();
   const horario = document.getElementById('agenda-horario').value;
-  const tipo = window._tipoAgenda || 'recorrente';  // default recorrente
+  const tipo = window._tipoAgenda || 'recorrente';
   const dias = Array.from(diasSelecionados);
-  const dataPontual = document.getElementById('agenda-data-pontual').value;
 
   if (!cliente) { showToast('⚠️ Informe o nome do cliente'); return; }
-  if (tipo === 'recorrente' && dias.length === 0) { showToast('⚠️ Selecione ao menos um dia'); return; }
-  if (tipo === 'pontual' && !dataPontual) { showToast('⚠️ Informe a data da corrida'); return; }
+  if (dias.length === 0) { showToast('⚠️ Selecione ao menos um dia da semana'); return; }
 
   const btn = document.getElementById('btn-salvar-agenda');
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
-    const dados = tipo === 'recorrente'
-      ? { cliente, horario: horario || null, dias, tipo: 'recorrente' }
-      : { cliente, horario: horario || null, dataPontual, tipo: 'pontual', dias: [] };
+    const dados = { cliente, horario: horario || null, dias, tipo };
     if (agendaEditandoId) {
       await updateDoc(doc(db, COLL_AGENDA, agendaEditandoId), dados);
       const idx = agendaFixa.findIndex(a => a.id === agendaEditandoId);
@@ -1813,7 +1812,6 @@ window.editarAgenda = function(id) {
   diasSelecionados = new Set(ag.dias || []);
   document.getElementById('agenda-cliente').value = ag.cliente;
   document.getElementById('agenda-horario').value = ag.horario || '';
-  document.getElementById('agenda-data-pontual').value = ag.dataPontual || '';
   document.querySelectorAll('.dia-btn').forEach(b => {
     const dia = parseInt(b.dataset.dia);
     b.classList.toggle('selected', diasSelecionados.has(dia));
