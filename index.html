@@ -597,6 +597,79 @@
     color: var(--text3);
     font-size: 14px;
   }
+
+  /* DIAS DA SEMANA */
+  .dia-btn {
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+  .dia-btn.selected {
+    background: var(--agendada);
+    border-color: var(--agendada);
+    color: white;
+  }
+
+  /* AGENDA CHECK ITEM */
+  .agenda-check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .agenda-check-item:last-child { border-bottom: none; }
+  .agenda-check-item input[type="checkbox"] {
+    width: 20px; height: 20px;
+    accent-color: var(--agendada);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .agenda-check-item.done .agenda-nome {
+    text-decoration: line-through;
+    color: var(--text3);
+  }
+  .agenda-nome {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .agenda-hora {
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* FIXO ITEM */
+  .fixo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .fixo-item:last-child { border-bottom: none; }
+  .fixo-dias {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .fixo-dia-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--agendada-light);
+    color: var(--agendada);
+  }
 </style>
 </head>
 <body>
@@ -616,6 +689,7 @@
 
 <div class="tabs">
   <div class="tab active" data-tab="hoje" onclick="switchTab('hoje')">Hoje</div>
+  <div class="tab" data-tab="agenda" onclick="switchTab('agenda')">Agenda</div>
   <div class="tab" data-tab="historico" onclick="switchTab('historico')">Histórico</div>
   <div class="tab" data-tab="relatorios" onclick="switchTab('relatorios')">Relatórios</div>
   <div class="tab" data-tab="clientes" onclick="switchTab('clientes')">Clientes</div>
@@ -652,6 +726,29 @@
     <button class="btn-share" onclick="compartilharWhatsApp()" style="flex:1;">
       <span>📋</span> Copiar lista do dia
     </button>
+  </div>
+</div>
+
+<!-- PAGE: AGENDA -->
+<div class="page" id="page-agenda">
+
+  <!-- Agendamentos de hoje -->
+  <div class="card" style="background:var(--accent-light);border-color:var(--accent);padding:14px 16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--accent-dark);margin-bottom:10px;" id="agenda-hoje-titulo">Agendamentos de hoje</div>
+    <div id="agenda-hoje-lista">
+      <div style="font-size:13px;color:var(--text3);">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- Lista de todos os fixos -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span class="section-title">Clientes fixos</span>
+      <button onclick="abrirModalAgenda()" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-light);border:1.5px solid var(--accent);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif;">+ Novo</button>
+    </div>
+    <div id="agenda-lista-fixos">
+      <div class="loading">Carregando...</div>
+    </div>
   </div>
 </div>
 
@@ -710,6 +807,9 @@
   <div class="nav-item active" id="nav-hoje" onclick="switchTab('hoje')">
     <span class="nav-icon">🚗</span>Hoje
   </div>
+  <div class="nav-item" id="nav-agenda" onclick="switchTab('agenda')">
+    <span class="nav-icon">📆</span>Agenda
+  </div>
   <div class="nav-item" id="nav-historico" onclick="switchTab('historico')">
     <span class="nav-icon">📋</span>Histórico
   </div>
@@ -718,6 +818,39 @@
   </div>
   <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')">
     <span class="nav-icon">👥</span>Clientes
+  </div>
+</div>
+
+<!-- MODAL: AGENDA FIXA -->
+<div class="modal-overlay" id="modal-agenda" onclick="fecharModalAgenda(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-agenda-titulo">Novo agendamento fixo</div>
+
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="agenda-cliente" placeholder="Nome do cliente" autocomplete="off" autocapitalize="words">
+    </div>
+
+    <div class="field">
+      <label>Horário</label>
+      <input type="time" id="agenda-horario" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface);outline:none;">
+    </div>
+
+    <div class="field">
+      <label>Dias da semana</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="agenda-dias">
+        <button type="button" class="dia-btn" data-dia="0" onclick="toggleDia(this)">Dom</button>
+        <button type="button" class="dia-btn" data-dia="1" onclick="toggleDia(this)">Seg</button>
+        <button type="button" class="dia-btn" data-dia="2" onclick="toggleDia(this)">Ter</button>
+        <button type="button" class="dia-btn" data-dia="3" onclick="toggleDia(this)">Qua</button>
+        <button type="button" class="dia-btn" data-dia="4" onclick="toggleDia(this)">Qui</button>
+        <button type="button" class="dia-btn" data-dia="5" onclick="toggleDia(this)">Sex</button>
+        <button type="button" class="dia-btn" data-dia="6" onclick="toggleDia(this)">Sáb</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-salvar-agenda" onclick="salvarAgendaFixa()">Salvar agendamento</button>
   </div>
 </div>
 
@@ -821,8 +954,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const COLL = 'corridas';
+const COLL_AGENDA = 'agenda_fixa';
 
 let todasCorridas = [];
+let agendaFixa = [];
+let agendaEditandoId = null;
+let diasSelecionados = new Set();
+let confirmacoesHoje = {};
 let tipoSelecionado = null;
 let delId = null;
 let periodoAtivo = 'semana';
@@ -867,6 +1005,7 @@ window.switchTab = function(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-' + tab));
+  if (tab === 'agenda') renderAgenda();
   if (tab === 'historico') renderHistorico();
   if (tab === 'relatorios') renderRelatorio();
   if (tab === 'clientes') renderClientes();
@@ -881,6 +1020,12 @@ async function loadCorridas() {
   renderHistorico();
   renderRelatorio();
   renderClientes();
+}
+
+async function loadAgenda() {
+  const snap = await getDocs(collection(db, COLL_AGENDA));
+  agendaFixa = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderAgenda();
 }
 
 // ── HOJE ──
@@ -1454,12 +1599,179 @@ window.copiarDivergencias = async function() {
   }
 };
 
+// ── AGENDA FIXA ──
+const DIAS_NOME = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DIAS_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+window.renderAgenda = function() {
+  const diaSemana = new Date().getDay();
+  const tituloEl = document.getElementById('agenda-hoje-titulo');
+  const listaHojeEl = document.getElementById('agenda-hoje-lista');
+  const listaFixosEl = document.getElementById('agenda-lista-fixos');
+  if (!tituloEl) return;
+
+  tituloEl.textContent = `Agendamentos de hoje — ${DIAS_FULL[diaSemana]}`;
+
+  // Agendamentos de hoje
+  const deHoje = agendaFixa
+    .filter(a => a.dias && a.dias.includes(diaSemana))
+    .sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
+
+  if (deHoje.length === 0) {
+    listaHojeEl.innerHTML = `<div style="font-size:13px;color:var(--text3);">Nenhum agendamento fixo para hoje.</div>`;
+  } else {
+    listaHojeEl.innerHTML = deHoje.map(a => {
+      const feito = confirmacoesHoje[a.id] || false;
+      return `
+        <div class="agenda-check-item ${feito ? 'done' : ''}" id="check-${a.id}">
+          <input type="checkbox" ${feito ? 'checked' : ''} onchange="toggleConfirmacao('${a.id}', this.checked)">
+          <div style="flex:1;">
+            <div class="agenda-nome">${a.cliente}</div>
+            ${a.horario ? `<div style="font-size:11px;color:var(--text3);">${a.horario}</div>` : ''}
+          </div>
+          <button onclick="registrarDaAgenda('${a.id}')" style="font-size:11px;font-weight:600;color:var(--success);background:var(--success-light);border:1.5px solid var(--success);border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif;">
+            + corrida
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Lista de fixos
+  if (agendaFixa.length === 0) {
+    listaFixosEl.innerHTML = `<div class="empty"><div class="empty-icon">📆</div><div class="empty-text">Nenhum cliente fixo cadastrado.<br>Toque em <strong>+ Novo</strong> para adicionar.</div></div>`;
+    return;
+  }
+
+  const sorted = [...agendaFixa].sort((a, b) => (a.horario||'').localeCompare(b.horario||''));
+  listaFixosEl.innerHTML = sorted.map(a => `
+    <div class="fixo-item">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);">${a.cliente}</div>
+        ${a.horario ? `<div style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;">${a.horario}</div>` : ''}
+        <div class="fixo-dias">
+          ${(a.dias||[]).sort().map(d => `<span class="fixo-dia-badge">${DIAS_NOME[d]}</span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="editarAgenda('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);">✏️</button>
+        <button onclick="deletarAgenda('${a.id}','${a.cliente.replace(/'/g,"\\'")}') " style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);">🗑</button>
+      </div>
+    </div>
+  `).join('');
+};
+
+window.toggleConfirmacao = function(id, checked) {
+  confirmacoesHoje[id] = checked;
+  const item = document.getElementById('check-' + id);
+  if (item) item.classList.toggle('done', checked);
+};
+
+window.registrarDaAgenda = function(id) {
+  const ag = agendaFixa.find(a => a.id === id);
+  if (!ag) return;
+  // Preenche o modal de nova corrida com os dados do agendamento
+  openModal();
+  setTimeout(() => {
+    document.getElementById('campo-cliente').value = ag.cliente;
+    selecionarTipo('agendada');
+  }, 100);
+};
+
+// ── MODAL AGENDA ──
+window.abrirModalAgenda = function() {
+  agendaEditandoId = null;
+  diasSelecionados = new Set();
+  document.getElementById('agenda-cliente').value = '';
+  document.getElementById('agenda-horario').value = '';
+  document.querySelectorAll('.dia-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('modal-agenda-titulo').textContent = 'Novo agendamento fixo';
+  document.getElementById('modal-agenda').classList.add('open');
+};
+
+window.fecharModalAgenda = function(e) {
+  if (!e || e.target === document.getElementById('modal-agenda')) {
+    document.getElementById('modal-agenda').classList.remove('open');
+    agendaEditandoId = null;
+  }
+};
+
+window.toggleDia = function(btn) {
+  const dia = parseInt(btn.dataset.dia);
+  if (diasSelecionados.has(dia)) {
+    diasSelecionados.delete(dia);
+    btn.classList.remove('selected');
+  } else {
+    diasSelecionados.add(dia);
+    btn.classList.add('selected');
+  }
+};
+
+window.salvarAgendaFixa = async function() {
+  const cliente = document.getElementById('agenda-cliente').value.trim();
+  const horario = document.getElementById('agenda-horario').value;
+  const dias = Array.from(diasSelecionados);
+
+  if (!cliente) { showToast('⚠️ Informe o nome do cliente'); return; }
+  if (dias.length === 0) { showToast('⚠️ Selecione ao menos um dia'); return; }
+
+  const btn = document.getElementById('btn-salvar-agenda');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const dados = { cliente, horario: horario || null, dias };
+    if (agendaEditandoId) {
+      await updateDoc(doc(db, COLL_AGENDA, agendaEditandoId), dados);
+      const idx = agendaFixa.findIndex(a => a.id === agendaEditandoId);
+      if (idx !== -1) agendaFixa[idx] = { id: agendaEditandoId, ...dados };
+      showToast('✅ Agendamento atualizado!');
+    } else {
+      const ref = await addDoc(collection(db, COLL_AGENDA), dados);
+      agendaFixa.push({ id: ref.id, ...dados });
+      showToast('✅ Agendamento salvo!');
+    }
+    document.getElementById('modal-agenda').classList.remove('open');
+    renderAgenda();
+  } catch(e) {
+    showToast('❌ Erro ao salvar.');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar agendamento';
+  }
+};
+
+window.editarAgenda = function(id) {
+  const ag = agendaFixa.find(a => a.id === id);
+  if (!ag) return;
+  agendaEditandoId = id;
+  diasSelecionados = new Set(ag.dias || []);
+  document.getElementById('agenda-cliente').value = ag.cliente;
+  document.getElementById('agenda-horario').value = ag.horario || '';
+  document.querySelectorAll('.dia-btn').forEach(b => {
+    const dia = parseInt(b.dataset.dia);
+    b.classList.toggle('selected', diasSelecionados.has(dia));
+  });
+  document.getElementById('modal-agenda-titulo').textContent = 'Editar agendamento';
+  document.getElementById('modal-agenda').classList.add('open');
+};
+
+window.deletarAgenda = async function(id, nome) {
+  if (!confirm(`Remover "${nome}" dos agendamentos fixos?`)) return;
+  try {
+    await deleteDoc(doc(db, COLL_AGENDA, id));
+    agendaFixa = agendaFixa.filter(a => a.id !== id);
+    renderAgenda();
+    showToast('🗑 Agendamento removido');
+  } catch(e) { showToast('❌ Erro ao remover.'); }
+};
+
 // ── INIT ──
 document.getElementById('footer-ano').textContent = new Date().getFullYear();
 const inputDataCopia = document.getElementById('data-copia');
 if (inputDataCopia) inputDataCopia.value = window.__dataHoje || hoje();
 setHeaderDate();
 loadCorridas();
+loadAgenda();
 
 // máscara valor
 document.getElementById('campo-valor').addEventListener('input', function() {
