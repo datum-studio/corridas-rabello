@@ -1798,8 +1798,8 @@ window.salvarAgendaFixa = async function() {
     document.getElementById('modal-agenda').classList.remove('open');
     renderAgenda();
   } catch(e) {
-    showToast('❌ Erro ao salvar.');
-    console.error(e);
+    showToast('❌ ' + (e.message || 'Erro ao salvar.'));
+    console.error('AGENDA ERRO:', e);
   } finally {
     btn.disabled = false; btn.textContent = 'Salvar agendamento';
   }
