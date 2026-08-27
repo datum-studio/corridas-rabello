@@ -1173,7 +1173,7 @@ function getRange(p) {
 
 function renderRelatorio() {
   const ini = getRange(periodoAtivo);
-  const corridas = todasCorridas.filter(c => c.timestamp.toDate() >= ini);
+  const corridas = todasCorridas.filter(c => c.timestamp.toDate() >= ini && c.valor != null);
   const total = corridas.reduce((s, c) => s + Number(c.valor), 0);
   const agendadas = corridas.filter(c => c.tipo === 'agendada');
   const avulsas = corridas.filter(c => c.tipo === 'avulsa');
@@ -1197,6 +1197,69 @@ function renderRelatorio() {
 
   // dias com corrida
   const diasAtivos = new Set(corridas.map(c => isoDate(c.timestamp.toDate()))).size;
+
+  // ── PADRÃO SEMANAL ──
+  // Semana atual: dom a sáb da semana corrente
+  const agora = new Date();
+  const inicioSemAtual = new Date(agora);
+  inicioSemAtual.setDate(agora.getDate() - agora.getDay());
+  inicioSemAtual.setHours(0,0,0,0);
+  const fimSemAtual = new Date(inicioSemAtual);
+  fimSemAtual.setDate(inicioSemAtual.getDate() + 7);
+
+  // Semana passada
+  const inicioSemPassada = new Date(inicioSemAtual);
+  inicioSemPassada.setDate(inicioSemAtual.getDate() - 7);
+  const fimSemPassada = new Date(inicioSemAtual);
+
+  const todasComValor = todasCorridas.filter(c => c.valor != null);
+
+  const semAtual  = Array(7).fill(0);
+  const semPassada = Array(7).fill(0);
+  const mediaHistorica = Array(7).fill(0);
+  const contagemHistorica = Array(7).fill(0); // quantas semanas tiveram dado naquele dia
+
+  todasComValor.forEach(c => {
+    const d = c.timestamp.toDate();
+    const v = Number(c.valor);
+    const dia = d.getDay();
+    if (d >= inicioSemAtual && d < fimSemAtual) semAtual[dia] += v;
+    else if (d >= inicioSemPassada && d < fimSemPassada) semPassada[dia] += v;
+    mediaHistorica[dia] += v;
+    contagemHistorica[dia]++;
+  });
+
+  // Média por semana para cada dia (não por corrida)
+  // Descobrir quantas semanas distintas existem no histórico
+  const datasUnicas = new Set(todasComValor.map(c => {
+    const d = c.timestamp.toDate();
+    const sem = Math.floor((d - new Date(2024,0,1)) / (7*24*3600*1000));
+    return d.getDay() + '_' + sem;
+  }));
+  const semanasPorDia = Array(7).fill(0);
+  datasUnicas.forEach(k => { const dia = parseInt(k.split('_')[0]); semanasPorDia[dia]++; });
+  const mediaSemanaDia = mediaHistorica.map((v, i) => semanasPorDia[i] > 0 ? v / semanasPorDia[i] : 0);
+
+  const maxComparativo = Math.max(...semAtual, ...semPassada, 1);
+  const maxMedia = Math.max(...mediaSemanaDia, 1);
+
+  // Resumo inteligente
+  const melhorDiaIdx = mediaSemanaDia.indexOf(Math.max(...mediaSemanaDia));
+  const piorDiaIdx = mediaSemanaDia.map((v,i) => v > 0 ? v : Infinity).indexOf(Math.min(...mediaSemanaDia.map((v,i) => v > 0 ? v : Infinity)));
+  const totalAtual = semAtual.reduce((s,v) => s+v, 0);
+  const totalPassada = semPassada.reduce((s,v) => s+v, 0);
+  const diffPct = totalPassada > 0 ? Math.round((totalAtual - totalPassada) / totalPassada * 100) : null;
+  const tendencia = diffPct === null ? '' : diffPct > 0
+    ? `📈 Esta semana está <strong>${diffPct}% melhor</strong> que a passada.`
+    : diffPct < 0
+    ? `📉 Esta semana está <strong>${Math.abs(diffPct)}% abaixo</strong> da passada.`
+    : `➡️ Esta semana está igual à passada.`;
+
+  const resumoTexto = [
+    mediaSemanaDia[melhorDiaIdx] > 0 ? `🏆 <strong>${diasNome[melhorDiaIdx]}</strong> é o dia mais rentável.` : '',
+    piorDiaIdx !== melhorDiaIdx && mediaSemanaDia[piorDiaIdx] > 0 ? `🔻 <strong>${diasNome[piorDiaIdx]}</strong> costuma render menos.` : '',
+    tendencia,
+  ].filter(Boolean).join('<br>');
 
   const el = document.getElementById('relatorio-content');
   el.innerHTML = `
@@ -1224,7 +1287,8 @@ function renderRelatorio() {
     </div>
 
     <div class="card">
-      <div class="section-title" style="margin-bottom:12px;">Ganhos por dia da semana</div>
+      <div class="section-title" style="margin-bottom:4px;">Ganhos por dia da semana</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Período selecionado</div>
       <div class="bar-chart">
         ${diasNome.map((d, i) => `
           <div class="bar-row">
@@ -1234,6 +1298,53 @@ function renderRelatorio() {
           </div>
         `).join('')}
       </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:2px;">Padrão semanal</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Média histórica por dia da semana</div>
+      <div class="bar-chart">
+        ${diasNome.map((d, i) => `
+          <div class="bar-row">
+            <span class="bar-label">${d}</span>
+            <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(mediaSemanaDia[i] / maxMedia * 100)}%;background:#7C3AED"></div></div>
+            <span class="bar-val">${mediaSemanaDia[i] > 0 ? fmtBRL(mediaSemanaDia[i]) : '—'}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-bottom:2px;">Esta semana vs semana passada</div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent);display:inline-block;"></span>Esta semana</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#CBD5E1;display:inline-block;"></span>Semana passada</span>
+      </div>
+      <div class="bar-chart">
+        ${diasNome.map((d, i) => `
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:4px;">${d}</div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+                  <div style="height:100%;width:${Math.round(semAtual[i]/maxComparativo*100)}%;background:var(--accent);border-radius:4px;"></div>
+                </div>
+                <span style="font-size:11px;font-family:'DM Mono',monospace;width:62px;color:var(--text);">${semAtual[i]>0?fmtBRL(semAtual[i]):'—'}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+                  <div style="height:100%;width:${Math.round(semPassada[i]/maxComparativo*100)}%;background:#CBD5E1;border-radius:4px;"></div>
+                </div>
+                <span style="font-size:11px;font-family:'DM Mono',monospace;width:62px;color:var(--text3);">${semPassada[i]>0?fmtBRL(semPassada[i]):'—'}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      ${resumoTexto ? `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.8;">
+        ${resumoTexto}
+      </div>` : ''}
     </div>
 
     ${topClientes.length > 0 ? `
