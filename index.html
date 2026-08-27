@@ -1429,6 +1429,9 @@ function closeModal() {
   document.getElementById('campo-cliente').value = '';
   document.getElementById('campo-valor').value = '';
   document.getElementById('campo-obs').value = '';
+  document.getElementById('campo-obs').placeholder = 'Ex: aeroporto, retorno, etc.';
+  document.getElementById('campo-obs').style.borderColor = '';
+  document.getElementById('campo-obs').style.background = '';
   tipoSelecionado = null;
   document.getElementById('btn-agendada').className = 'tipo-btn';
   document.getElementById('btn-avulsa').className = 'tipo-btn';
@@ -1836,11 +1839,15 @@ window.navegarDia = function(dir) {
 window.registrarDaAgenda = function(id) {
   const ag = agendaFixa.find(a => a.id === id);
   if (!ag) return;
-  // Preenche o modal de nova corrida com os dados do agendamento
   openModal();
   setTimeout(() => {
     document.getElementById('campo-cliente').value = ag.cliente;
     selecionarTipo('agendada');
+    const obsField = document.getElementById('campo-obs');
+    obsField.placeholder = 'Ex: só Maria foi hoje, João faltou...';
+    obsField.style.borderColor = 'var(--warning)';
+    obsField.style.background = 'var(--warning-light)';
+    obsField.focus();
   }, 100);
 };
 
