@@ -1628,8 +1628,6 @@ window.renderAgenda = function() {
   const listaFixosEl = document.getElementById('agenda-lista-fixos');
   if (!tituloEl) return;
 
-  tituloEl.textContent = `Agendamentos de hoje — ${DIAS_FULL[diaSemana]}`;
-
   // Dia da semana baseado em offset
   const offset = window._diaOffset || 0;
   const dataSelObj = new Date();
