@@ -385,7 +385,7 @@
     margin-bottom: 10px;
   }
   .bar-label {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text2);
     width: 60px;
     flex-shrink: 0;
@@ -406,7 +406,7 @@
   }
   .bar-val {
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text);
     width: 64px;
     flex-shrink: 0;
@@ -1328,7 +1328,7 @@ function renderRelatorio() {
       <div class="section-title" style="margin-bottom:2px;">Comparativo — últimas 4 semanas</div>
       <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
         ${labels4.map((l,i) => `
-          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);">
+          <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);">
             <span style="width:10px;height:10px;border-radius:2px;background:${cores4[i]};display:inline-block;"></span>${l}
           </span>
         `).join('')}
@@ -1336,14 +1336,14 @@ function renderRelatorio() {
       <div class="bar-chart">
         ${diasNome.map((d, i) => `
           <div style="margin-bottom:12px;">
-            <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:5px;">${d}</div>
+            <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:5px;">${d}</div>
             <div style="display:flex;flex-direction:column;gap:3px;">
               ${semanas.map((s, si) => `
                 <div style="display:flex;align-items:center;gap:6px;">
                   <div style="flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;">
                     <div style="height:100%;width:${Math.round(s.dados[i]/maxComparativo*100)}%;background:${cores4[si]};border-radius:4px;transition:width 0.4s;"></div>
                   </div>
-                  <span style="font-size:10px;font-family:'DM Mono',monospace;width:58px;color:${si===3?'var(--text)':'var(--text3)'};">${s.dados[i]>0?fmtBRL(s.dados[i]):'—'}</span>
+                  <span style="font-size:13px;font-family:'DM Mono',monospace;width:68px;color:${si===3?'var(--text)':'var(--text3)'};">${s.dados[i]>0?fmtBRL(s.dados[i]):'—'}</span>
                 </div>
               `).join('')}
             </div>
