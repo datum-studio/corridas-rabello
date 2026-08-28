@@ -1213,6 +1213,7 @@ function renderRelatorio() {
   const fimSemPassada = new Date(inicioSemAtual);
 
   // 4 semanas: calcular início de cada uma
+  const todasComValor = todasCorridas.filter(c => c.valor != null);
   const semanas = [3,2,1,0].map(n => {
     const ini = new Date(inicioSemAtual);
     ini.setDate(inicioSemAtual.getDate() - n*7);
