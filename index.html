@@ -39,6 +39,9 @@
     --agendada-light: #F5F3FF;
     --avulsa: #0891B2;
     --avulsa-light: #ECFEFF;
+    --valle: #166534;
+    --valle-light: #F0FDF4;
+    --valle-mid: #16A34A;
     --radius: 12px;
     --radius-sm: 8px;
     --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
@@ -693,6 +696,7 @@
   <div class="tab" data-tab="historico" onclick="switchTab('historico')">Histórico</div>
   <div class="tab" data-tab="relatorios" onclick="switchTab('relatorios')">Relatórios</div>
   <div class="tab" data-tab="clientes" onclick="switchTab('clientes')">Clientes</div>
+  <div class="tab" data-tab="valle" onclick="switchTab('valle')" style="color:var(--valle);font-weight:600;">Valle</div>
 </div>
 
 <!-- PAGE: HOJE -->
@@ -806,6 +810,41 @@
   </button>
 </div>
 
+<!-- PAGE: VALLE -->
+<div class="page" id="page-valle">
+  <div class="today-banner" style="background:linear-gradient(135deg, var(--valle) 0%, var(--valle-mid) 100%);">
+    <div class="today-label">Total Valle Mobile — hoje</div>
+    <div class="today-value" id="total-valle">R$ 0,00</div>
+    <div class="today-meta" id="meta-valle">0 corridas</div>
+  </div>
+
+  <div class="card">
+    <div class="form-title">Nova corrida Valle Mobile</div>
+
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="valle-cliente" placeholder="Nome do cliente" autocomplete="off" autocapitalize="words">
+    </div>
+
+    <div class="field">
+      <label>Valor (R$) <span style="color:var(--text3);font-size:10px;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="valle-valor" placeholder="0,00" inputmode="decimal" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Observação <span style="color:var(--text3);font-size:10px;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="valle-obs" placeholder="Ex: aeroporto, retorno...">
+    </div>
+
+    <button class="btn-primary" onclick="salvarValle()" style="background:var(--valle);">Registrar corrida</button>
+  </div>
+
+  <div class="card">
+    <div class="section-title" id="valle-lista-titulo">Corridas de hoje</div>
+    <div id="lista-valle"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
 <!-- FAB -->
 <button class="fab" onclick="openModal()" title="Nova corrida">+</button>
 
@@ -825,6 +864,9 @@
   </div>
   <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')">
     <span class="nav-icon">👥</span>Clientes
+  </div>
+  <div class="nav-item" id="nav-valle" onclick="switchTab('valle')">
+    <span class="nav-icon" style="color:var(--valle);">🟢</span><span style="color:var(--valle);font-weight:600;">Valle</span>
   </div>
 </div>
 
@@ -972,9 +1014,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const COLL = 'corridas';
 const COLL_AGENDA = 'agenda_fixa';
+const COLL_VALLE = 'corridas_valle';
 
 let todasCorridas = [];
 let agendaFixa = [];
+let corridasValle = [];
 let agendaEditandoId = null;
 let diasSelecionados = new Set();
 let confirmacoesHoje = {};
@@ -1025,6 +1069,7 @@ window.switchTab = function(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-' + tab));
   if (tab === 'agenda') renderAgenda();
+  if (tab === 'valle') renderValle();
   if (tab === 'historico') renderHistorico();
   if (tab === 'relatorios') renderRelatorio();
   if (tab === 'clientes') renderClientes();
@@ -1039,6 +1084,12 @@ async function loadCorridas() {
   renderHistorico();
   renderRelatorio();
   renderClientes();
+}
+
+async function loadValle() {
+  const snap = await getDocs(collection(db, COLL_VALLE));
+  corridasValle = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderValle();
 }
 
 async function loadAgenda() {
@@ -1198,6 +1249,11 @@ function renderRelatorio() {
   // dias com corrida
   const diasAtivos = new Set(corridas.map(c => isoDate(c.timestamp.toDate()))).size;
 
+  // Valle Mobile no mesmo período
+  const corridasValleP = corridasValle.filter(c => c.timestamp.toDate() >= ini && c.valor != null);
+  const totalValle = corridasValleP.reduce((s,c) => s + Number(c.valor), 0);
+  const totalGeral = total + totalValle;
+
   // ── PADRÃO SEMANAL ──
   // Semana atual: dom a sáb da semana corrente
   const agora = new Date();
@@ -1274,15 +1330,20 @@ function renderRelatorio() {
   const el = document.getElementById('relatorio-content');
   el.innerHTML = `
     <div class="relatorio-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total</div>
-        <div class="stat-value green">${fmtBRL(total)}</div>
-        <div class="stat-sub">${corridas.length} corridas</div>
+      <div class="stat-card" style="grid-column:span 2;background:var(--accent-light);border-color:var(--accent);">
+        <div class="stat-label">Total geral</div>
+        <div class="stat-value green">${fmtBRL(totalGeral)}</div>
+        <div class="stat-sub">${corridas.length + corridasValleP.length} corridas (Ella + Valle)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Média/corrida</div>
-        <div class="stat-value">${fmtBRL(media)}</div>
-        <div class="stat-sub">${diasAtivos} dia${diasAtivos !== 1 ? 's' : ''} ativo${diasAtivos !== 1 ? 's' : ''}</div>
+        <div class="stat-label" style="color:var(--agendada);">Ella Drive</div>
+        <div class="stat-value" style="color:var(--agendada);">${fmtBRL(total)}</div>
+        <div class="stat-sub">${corridas.length} corridas</div>
+      </div>
+      <div class="stat-card" style="border-color:var(--valle);">
+        <div class="stat-label" style="color:var(--valle);">Valle Mobile</div>
+        <div class="stat-value" style="color:var(--valle);">${fmtBRL(totalValle)}</div>
+        <div class="stat-sub">${corridasValleP.length} corridas</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Agendadas</div>
@@ -1741,6 +1802,92 @@ window.copiarDivergencias = async function() {
   }
 };
 
+// ── VALLE MOBILE ──
+window.renderValle = function() {
+  const hj = hoje();
+  const corridas = corridasValle
+    .filter(c => isoDate(c.timestamp.toDate()) === hj)
+    .sort((a, b) => (a.ordem||0) - (b.ordem||0));
+  const total = corridas.reduce((s,c) => s + (c.valor ? Number(c.valor) : 0), 0);
+
+  document.getElementById('total-valle').textContent = fmtBRL(total || null);
+  document.getElementById('meta-valle').textContent =
+    `${corridas.length} corrida${corridas.length !== 1 ? 's' : ''} hoje`;
+
+  const lista = document.getElementById('lista-valle');
+  if (corridas.length === 0) {
+    lista.innerHTML = `<div class="empty"><div class="empty-icon" style="color:var(--valle);">🟢</div><div class="empty-text">Nenhuma corrida Valle hoje.</div></div>`;
+    return;
+  }
+  lista.innerHTML = corridas.map((c, i) => `
+    <div class="corrida-item">
+      <div class="corrida-tipo" style="background:var(--valle-light);">🟢</div>
+      <div class="corrida-info">
+        <div class="corrida-cliente">${c.cliente}</div>
+        ${c.obs ? `<div class="corrida-meta">${c.obs}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        ${c.valor == null
+          ? `<button onclick="editarValorValle('${c.id}')" style="font-size:11px;font-weight:600;color:var(--warning);background:var(--warning-light);border:1px solid var(--warning);border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">+ valor</button>`
+          : `<div class="corrida-valor" style="color:var(--valle);cursor:pointer;" onclick="editarValorValle('${c.id}')">${fmtBRL(c.valor)} ✏️</div>`
+        }
+        <button class="corrida-del" onclick="deletarValle('${c.id}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+};
+
+window.salvarValle = async function() {
+  const cliente = document.getElementById('valle-cliente').value.trim();
+  const valorRaw = document.getElementById('valle-valor').value.replace(',','.').trim();
+  const valor = valorRaw ? parseFloat(valorRaw) : null;
+  const obs = document.getElementById('valle-obs').value.trim();
+
+  if (!cliente) { showToast('⚠️ Informe o nome do cliente'); return; }
+
+  const btn = document.querySelector('#page-valle .btn-primary');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const ordemMax = corridasValle
+      .filter(c => isoDate(c.timestamp.toDate()) === hoje())
+      .reduce((m,c) => Math.max(m, c.ordem||0), 0);
+    const ref = await addDoc(collection(db, COLL_VALLE), {
+      cliente, valor, obs: obs||null, ordem: ordemMax+1, timestamp: Timestamp.now()
+    });
+    corridasValle.unshift({ id: ref.id, cliente, valor, obs: obs||null, ordem: ordemMax+1, timestamp: Timestamp.now() });
+    document.getElementById('valle-cliente').value = '';
+    document.getElementById('valle-valor').value = '';
+    document.getElementById('valle-obs').value = '';
+    renderValle();
+    showToast('✅ Corrida Valle registrada!');
+  } catch(e) { showToast('❌ Erro ao salvar.'); console.error(e); }
+  finally { btn.disabled = false; btn.textContent = 'Registrar corrida'; }
+};
+
+window.editarValorValle = async function(id) {
+  const input = prompt('Informe o valor da corrida (ex: 25,50):');
+  if (input === null) return;
+  const valor = parseFloat(input.replace(',','.').trim());
+  if (!valor || valor <= 0) { showToast('⚠️ Valor inválido'); return; }
+  try {
+    await updateDoc(doc(db, COLL_VALLE, id), { valor });
+    const idx = corridasValle.findIndex(c => c.id === id);
+    if (idx !== -1) corridasValle[idx].valor = valor;
+    renderValle();
+    showToast('✅ Valor atualizado!');
+  } catch(e) { showToast('❌ Erro ao atualizar.'); }
+};
+
+window.deletarValle = async function(id) {
+  try {
+    await deleteDoc(doc(db, COLL_VALLE, id));
+    corridasValle = corridasValle.filter(c => c.id !== id);
+    renderValle();
+    showToast('🗑 Corrida removida');
+  } catch(e) { showToast('❌ Erro ao excluir.'); }
+};
+
 // ── AGENDA FIXA ──
 const DIAS_NOME = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DIAS_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -1963,6 +2110,7 @@ if (inputDataCopia) inputDataCopia.value = window.__dataHoje || hoje();
 setHeaderDate();
 loadCorridas();
 loadAgenda();
+loadValle();
 
 // máscara valor
 document.getElementById('campo-valor').addEventListener('input', function() {
