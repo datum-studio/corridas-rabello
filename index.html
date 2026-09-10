@@ -745,6 +745,7 @@
 <!-- PAGE: RELATORIOS -->
 <div class="page" id="page-relatorios">
   <div class="periodo-row" id="periodo-btns">
+    <button class="periodo-btn" onclick="setPeriodo('hoje',this)">Hoje</button>
     <button class="periodo-btn active" onclick="setPeriodo('semana',this)">Esta semana</button>
     <button class="periodo-btn" onclick="setPeriodo('mes',this)">Este mês</button>
     <button class="periodo-btn" onclick="setPeriodo('30d',this)">Últimos 30 dias</button>
@@ -1114,41 +1115,63 @@ window.renderHistorico = function() {
     mesInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
   const [ano, mes] = mesInput.value.split('-').map(Number);
-  const corridas = todasCorridas.filter(c => {
+
+  const corridasElla = todasCorridas.filter(c => {
+    const d = c.timestamp.toDate();
+    return d.getFullYear() === ano && d.getMonth() + 1 === mes;
+  });
+  const corridasValleM = corridasValle.filter(c => {
     const d = c.timestamp.toDate();
     return d.getFullYear() === ano && d.getMonth() + 1 === mes;
   });
 
-  // agrupar por dia
   const porDia = {};
-  corridas.forEach(c => {
+  [...corridasElla.map(c => ({...c, _app:'ella'})),
+   ...corridasValleM.map(c => ({...c, _app:'valle'}))
+  ].forEach(c => {
     const dia = isoDate(c.timestamp.toDate());
     if (!porDia[dia]) porDia[dia] = [];
     porDia[dia].push(c);
   });
 
   const lista = document.getElementById('lista-historico');
-  if (corridas.length === 0) {
+  if (Object.keys(porDia).length === 0) {
     lista.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Sem corridas neste mês.</div></div>`;
     return;
   }
 
   const dias = Object.keys(porDia).sort().reverse();
   lista.innerHTML = dias.map(dia => {
-    const cs = porDia[dia];
-    const total = cs.reduce((s, c) => s + Number(c.valor), 0);
+    const cs = porDia[dia].sort((a,b) => (a.ordem||0)-(b.ordem||0));
+    const totalDia = cs.reduce((s,c) => s + (c.valor ? Number(c.valor) : 0), 0);
     const dataFmt = fmtData(dia + 'T12:00:00');
+    const ellaCs = cs.filter(c => c._app !== 'valle');
+    const valleCs = cs.filter(c => c._app === 'valle');
     return `
       <div style="margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;">${dataFmt}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--success);font-weight:500;">${fmtBRL(total)}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--success);font-weight:500;">${fmtBRL(totalDia)}</span>
         </div>
-        ${cs.map((c, i) => corridaHTML(c, i, cs.length)).join('')}
+        ${ellaCs.map((c, i) => corridaHTML(c, i, ellaCs.length)).join('')}
+        ${valleCs.map(c => valleItemHTML(c)).join('')}
       </div>
     `;
   }).join('');
 };
+
+function valleItemHTML(c) {
+  return `
+    <div class="corrida-item">
+      <div class="corrida-tipo" style="background:var(--valle-light);">🟢</div>
+      <div class="corrida-info">
+        <div class="corrida-cliente">${c.cliente}</div>
+        <div class="corrida-meta">${c.obs ? c.obs + ' · ' : ''}<span class="tipo-badge" style="background:var(--valle-light);color:var(--valle);">Valle</span></div>
+      </div>
+      <div class="corrida-valor" style="color:var(--valle);">${fmtBRL(c.valor)}</div>
+    </div>
+  `;
+}
 
 function corridaHTML(c, idx, total) {
   const ag = c.tipo === 'agendada';
@@ -1188,7 +1211,9 @@ window.setPeriodo = function(p, btn) {
 function getRange(p) {
   const now = new Date();
   let ini;
-  if (p === 'semana') {
+  if (p === 'hoje') {
+    ini = new Date(now); ini.setHours(0,0,0,0);
+  } else if (p === 'semana') {
     ini = new Date(now); ini.setDate(now.getDate() - now.getDay());
     ini.setHours(0, 0, 0, 0);
   } else if (p === 'mes') {
