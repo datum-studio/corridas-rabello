@@ -691,12 +691,11 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" data-tab="hoje" onclick="switchTab('hoje')">Hoje</div>
-  <div class="tab" data-tab="agenda" onclick="switchTab('agenda')">Agenda</div>
+  <div class="tab active" data-tab="hoje" onclick="switchTab('hoje')" style="color:var(--agendada);">Ella</div>
+  <div class="tab" data-tab="valle" onclick="switchTab('valle')" style="color:var(--valle);">Valle</div>
   <div class="tab" data-tab="historico" onclick="switchTab('historico')">Histórico</div>
   <div class="tab" data-tab="relatorios" onclick="switchTab('relatorios')">Relatórios</div>
   <div class="tab" data-tab="clientes" onclick="switchTab('clientes')">Clientes</div>
-  <div class="tab" data-tab="valle" onclick="switchTab('valle')" style="color:var(--valle);font-weight:600;">Valle</div>
 </div>
 
 <!-- PAGE: HOJE -->
@@ -730,36 +729,6 @@
     <button class="btn-share" onclick="compartilharWhatsApp()" style="flex:1;">
       <span>📋</span> Copiar lista do dia
     </button>
-  </div>
-</div>
-
-<!-- PAGE: AGENDA -->
-<div class="page" id="page-agenda">
-
-  <!-- Agendamentos de hoje -->
-  <div class="card" style="background:var(--accent-light);border-color:var(--accent);padding:14px 16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-      <div style="font-size:13px;font-weight:700;color:var(--accent-dark);" id="agenda-hoje-titulo">Agendamentos de hoje</div>
-      <div style="display:flex;gap:4px;align-items:center;">
-        <button onclick="navegarDia(-1)" style="background:white;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;font-family:Inter,sans-serif;font-weight:600;">‹</button>
-        <span id="agenda-dia-label" style="font-size:11px;font-weight:700;color:var(--accent-dark);min-width:28px;text-align:center;"></span>
-        <button onclick="navegarDia(1)" style="background:white;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;font-family:Inter,sans-serif;font-weight:600;">›</button>
-      </div>
-    </div>
-    <div id="agenda-hoje-lista">
-      <div style="font-size:13px;color:var(--text3);">Carregando...</div>
-    </div>
-  </div>
-
-  <!-- Lista de todos os fixos -->
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span class="section-title">Clientes fixos</span>
-      <button onclick="abrirModalAgenda()" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-light);border:1.5px solid var(--accent);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Inter,sans-serif;">+ Novo</button>
-    </div>
-    <div id="agenda-lista-fixos">
-      <div class="loading">Carregando...</div>
-    </div>
   </div>
 </div>
 
@@ -813,9 +782,19 @@
 <!-- PAGE: VALLE -->
 <div class="page" id="page-valle">
   <div class="today-banner" style="background:linear-gradient(135deg, var(--valle) 0%, var(--valle-mid) 100%);">
-    <div class="today-label">Total Valle Mobile — hoje</div>
+    <div class="today-label" id="valle-banner-label">Total Valle Mobile — hoje</div>
     <div class="today-value" id="total-valle">R$ 0,00</div>
     <div class="today-meta" id="meta-valle">0 corridas</div>
+  </div>
+
+  <div class="card" style="display:flex;align-items:center;gap:10px;padding:12px 16px;">
+    <span style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;">📅 Ver dia:</span>
+    <input type="date" id="data-valle" onchange="mudarDataValle(this.value)"
+      style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:Inter,sans-serif;color:var(--text);background:var(--surface);outline:none;">
+    <button onclick="document.getElementById('data-valle').value=hoje();mudarDataValle(hoje());"
+      style="font-size:11px;font-weight:600;color:var(--valle);background:var(--valle-light);border:1.5px solid var(--valle);border-radius:6px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-family:Inter,sans-serif;">
+      Hoje
+    </button>
   </div>
 
   <div class="card">
@@ -851,10 +830,10 @@
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="nav-item active" id="nav-hoje" onclick="switchTab('hoje')">
-    <span class="nav-icon">🚗</span>Hoje
+    <span class="nav-icon">🚗</span><span style="color:var(--agendada);font-weight:600;">Ella</span>
   </div>
-  <div class="nav-item" id="nav-agenda" onclick="switchTab('agenda')">
-    <span class="nav-icon">📆</span>Agenda
+  <div class="nav-item" id="nav-valle" onclick="switchTab('valle')">
+    <span class="nav-icon">🟢</span><span style="color:var(--valle);font-weight:600;">Valle</span>
   </div>
   <div class="nav-item" id="nav-historico" onclick="switchTab('historico')">
     <span class="nav-icon">📋</span>Histórico
@@ -864,9 +843,6 @@
   </div>
   <div class="nav-item" id="nav-clientes" onclick="switchTab('clientes')">
     <span class="nav-icon">👥</span>Clientes
-  </div>
-  <div class="nav-item" id="nav-valle" onclick="switchTab('valle')">
-    <span class="nav-icon" style="color:var(--valle);">🟢</span><span style="color:var(--valle);font-weight:600;">Valle</span>
   </div>
 </div>
 
@@ -969,7 +945,7 @@
       </div>
     </div>
     <div style="text-align:right;color:var(--text2);font-size:0.72rem;line-height:1.7;">
-      <div style="font-weight:500;">Controle de Corridas</div>
+      <div style="font-weight:500;"><span style="color:var(--agendada);">Ella Drive</span> · <span style="color:var(--valle);">Valle Mobile</span></div>
       <div style="opacity:0.8;">v1.0.0</div>
       <div>© <span id="footer-ano">2026</span></div>
     </div>
@@ -1068,7 +1044,6 @@ window.switchTab = function(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + tab));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.id === 'nav-' + tab));
-  if (tab === 'agenda') renderAgenda();
   if (tab === 'valle') renderValle();
   if (tab === 'historico') renderHistorico();
   if (tab === 'relatorios') renderRelatorio();
@@ -1125,6 +1100,10 @@ function renderHoje() {
 
 window.mudarDataHoje = function(val) {
   renderHoje();
+};
+
+window.mudarDataValle = function(val) {
+  renderValle();
 };
 
 // ── HISTORICO ──
@@ -1235,6 +1214,7 @@ function renderRelatorio() {
   const diasNome = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   const porDia = Array(7).fill(0);
   corridas.forEach(c => { porDia[c.timestamp.toDate().getDay()] += Number(c.valor); });
+  corridasValleP.forEach(c => { porDia[c.timestamp.toDate().getDay()] += Number(c.valor); });
   const maxDia = Math.max(...porDia, 1);
 
   // corridas por cliente (top 5)
@@ -1281,7 +1261,11 @@ function renderRelatorio() {
   });
   // semanas[0]=3 semanas atrás, semanas[3]=atual
 
-  todasComValor.forEach(c => {
+  const todasParaGrafico = [
+    ...todasComValor,
+    ...corridasValle.filter(c => c.valor != null)
+  ];
+  todasParaGrafico.forEach(c => {
     const d = c.timestamp.toDate();
     const v = Number(c.valor);
     const dia = d.getDay();
@@ -1804,19 +1788,22 @@ window.copiarDivergencias = async function() {
 
 // ── VALLE MOBILE ──
 window.renderValle = function() {
-  const hj = hoje();
+  const dataSel = document.getElementById('data-valle')?.value || hoje();
+  const ehHoje = dataSel === hoje();
   const corridas = corridasValle
-    .filter(c => isoDate(c.timestamp.toDate()) === hj)
+    .filter(c => isoDate(c.timestamp.toDate()) === dataSel)
     .sort((a, b) => (a.ordem||0) - (b.ordem||0));
   const total = corridas.reduce((s,c) => s + (c.valor ? Number(c.valor) : 0), 0);
 
+  const labelEl = document.getElementById('valle-banner-label');
+  if (labelEl) labelEl.textContent = ehHoje ? 'Total Valle Mobile — hoje' : `Total Valle Mobile — ${fmtData(dataSel+'T12:00:00')}`;
   document.getElementById('total-valle').textContent = fmtBRL(total || null);
   document.getElementById('meta-valle').textContent =
-    `${corridas.length} corrida${corridas.length !== 1 ? 's' : ''} hoje`;
+    `${corridas.length} corrida${corridas.length !== 1 ? 's' : ''}${ehHoje ? ' hoje' : ' neste dia'}`;
 
   const lista = document.getElementById('lista-valle');
   if (corridas.length === 0) {
-    lista.innerHTML = `<div class="empty"><div class="empty-icon" style="color:var(--valle);">🟢</div><div class="empty-text">Nenhuma corrida Valle hoje.</div></div>`;
+    lista.innerHTML = `<div class="empty"><div class="empty-icon" style="color:var(--valle);">🟢</div><div class="empty-text">Nenhuma corrida Valle${ehHoje ? ' hoje' : ' neste dia'}.</div></div>`;
     return;
   }
   lista.innerHTML = corridas.map((c, i) => `
