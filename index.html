@@ -1212,6 +1212,9 @@ function renderRelatorio() {
 
   // por dia da semana
   const diasNome = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const corridasValleP = corridasValle.filter(c => c.timestamp.toDate() >= ini && c.valor != null);
+  const totalValle = corridasValleP.reduce((s,c) => s + Number(c.valor), 0);
+  const totalGeral = total + totalValle;
   const porDia = Array(7).fill(0);
   corridas.forEach(c => { porDia[c.timestamp.toDate().getDay()] += Number(c.valor); });
   corridasValleP.forEach(c => { porDia[c.timestamp.toDate().getDay()] += Number(c.valor); });
@@ -1228,11 +1231,6 @@ function renderRelatorio() {
 
   // dias com corrida
   const diasAtivos = new Set(corridas.map(c => isoDate(c.timestamp.toDate()))).size;
-
-  // Valle Mobile no mesmo período
-  const corridasValleP = corridasValle.filter(c => c.timestamp.toDate() >= ini && c.valor != null);
-  const totalValle = corridasValleP.reduce((s,c) => s + Number(c.valor), 0);
-  const totalGeral = total + totalValle;
 
   // ── PADRÃO SEMANAL ──
   // Semana atual: dom a sáb da semana corrente
